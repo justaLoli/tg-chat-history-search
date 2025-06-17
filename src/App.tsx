@@ -1,186 +1,112 @@
-import { useState, useEffect, useRef } from "react";
-import { List, NavBar, SearchBar, Space, SpinLoading, Toast, Empty, Button } from "antd-mobile";
+// src/App.tsx
 
-// ... 类型定义保持不变 ...
-type MessageRecord = { id: number; text: string; from: string; date: string; };
-type ChatRecord = { id: string; name: string; messages: MessageRecord[]; };
+import { NavBar, TabBar } from 'antd-mobile';
+import SearchPage from './components/SearchPage'; // 引入我们新的主内容页面
+import { useState, useEffect } from "react";
+import { ChatRecord, MainData, MessageRecord } from './types';
+import ManagePage from './components/ManagePage';
 
-// 定义从 Worker 接收的消息类型
-type WorkerResponse = 
-  | { type: 'load-complete'; payload: { chatRecord: ChatRecord, info: { name: string; messageCount: number } } }
-  | { type: 'search-results'; payload: MessageRecord[] }
-  | { type: 'error'; payload: string };
 
-const STORAGE_KEY = 'chat-history-data'; // 在主线程定义 Key
+const STORAGE_KEY = 'chat-history-data';
 
 export default function App() {
-  const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MessageRecord[]>([]);
-  const [isImporting, setIsImporting] = useState(true); // 初始为 true，表示正在检查缓存
-  const [isSearching, setIsSearching] = useState(false);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
-  // const [isDataFromCached, setIsDataFromCached] = useState(false);
-  const [chatInfo, setChatInfo] = useState<{name: string, count: number} | null>(null);
 
-  const workerRef = useRef<Worker>();
-  const debounceTimerRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    workerRef.current = new Worker(new URL('./chat.worker.ts', import.meta.url), { type: 'module' });
+  const [mainData, setMainData] = useState<MainData>({});
 
-    workerRef.current.onmessage = (event: MessageEvent<WorkerResponse>) => {
-      const { type, payload } = event.data;
+  // 关于加载数据的帮助函数
+  // 注意：这些函数并非async，它们执行过程中UI会完全卡死，哈哈！
 
-      switch (type) {
-        case 'load-complete':
-          // 主线程负责写入 localStorage
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload.chatRecord));
-          
-          setIsImporting(false);
-          setIsDataLoaded(true);
-          setSearchResults([]);
-          setQuery('');
-          setChatInfo({name: payload.info.name, count: payload.info.messageCount});
-          // Toast.show({
-          //   icon: 'success',
-          //   content: `加载成功: ${payload.info.name} (${payload.info.messageCount}条)`,
-          // });
-          break;
-        
-        case 'search-results':
-          setSearchResults(payload);
-          setIsSearching(false);
-          break;
-        
-        case 'error':
-          setIsImporting(false);
-          setIsSearching(false);
-          // 如果出错，也尝试清除可能已损坏的本地缓存
-          localStorage.removeItem(STORAGE_KEY);
-          Toast.show({ icon: 'fail', content: payload });
-          break;
-      }
-    };
-
-    // --- 应用启动时的核心逻辑 ---
-    // 1. 主线程检查 localStorage
+  const loadMainDataFromLocalStorage = () => {
     const cachedData = localStorage.getItem(STORAGE_KEY);
-    if (cachedData) {
-      // 2. 如果有缓存，发送给 Worker 去加载
-      // setIsDataFromCached(true);
-      workerRef.current?.postMessage({ type: 'load-from-string', payload: cachedData });
-    } else {
-      // 3. 如果没有缓存，直接结束初始加载状态
-      setIsImporting(false);
+    if (!cachedData) { return; }
+    try {
+      const json = JSON.parse(cachedData!);
+      setMainData(json);
+      console.log("seted", json);
+    } catch (error) {
+      console.error(`Error in loadMainDataFromLocalStorage: ${error}`)
     }
+  }
 
-    return () => {
-      workerRef.current?.terminate();
-    };
-  }, []);
+  const importChatHistory = (dataString: string, key: string = "default") => {
+    try {
+      const json = JSON.parse(dataString);
+      const messages: MessageRecord[] = (json.messages || [])
+        .filter((m: any) => typeof m.text === "string" && m.text.length > 0)
+        .map((m: any) => ({
+          id: m.id,
+          text: m.text,
+          from: m.from || "Unknown",
+          date: m.date || new Date().toISOString(),
+        }));
 
-  const handleSearch = (q: string) => {
-    setQuery(q);
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    if (!q) {
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
+      const chatRecord: ChatRecord = {
+        id: key,
+        name: json.name || "Unnamed Chat",
+        count: messages.length,
+        messages,
+      };
+
+      const new_data = {
+        ...mainData,
+        [key]: chatRecord
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(new_data));
+      setMainData(new_data);
+
+    } catch (error) {
+      throw error;
     }
-    setIsSearching(true);
-    debounceTimerRef.current = window.setTimeout(() => {
-      workerRef.current?.postMessage({ type: 'search', payload: q });
-    }, 300);
   };
 
-  const handleImport = async (_: any) => {
-    const input = document.createElement('input');
-    input.type = "file";
-    input.addEventListener('change', async ()=> {
-      const file = input.files?.[0];
-      if (!file) return;
+  const getChatHistory = (key: string): ChatRecord | null => {
+    console.log(mainData)
+    if (!(key in mainData)) { return null; }
+    return mainData[key];
+  }
 
-      setIsImporting(true);
-      setIsDataLoaded(false);
-      setChatInfo(null);
-      const text = await file.text();
-      // 统一使用 'load-from-string' 指令
-      workerRef.current?.postMessage({ type: 'load-from-string', payload: text });
-    })
-    input.click();
-  };
+  useEffect(loadMainDataFromLocalStorage, []);
 
 
-  // 渲染列表内容
-  const renderListContent = () => {
-    if (isImporting) {
-      return <List.Item>
-        <Space align="center" justify="center" style={{ width: '100%', padding: '20px 0' }}>
-          <SpinLoading style={{ '--size': '24px' }} />
-          <span>正在导入和解析数据...</span>
-        </Space>
-      </List.Item>;
+  //TODO: 将tabkey转变为Context
+  const [tabKey, setTabKey] = useState<string>("");
+  const [chatKey, setChatKey] = useState<string>("");
+  
+  useEffect(() => { setChatKey("default") }, [])
+  useEffect(() => { setTabKey("search") }, [])
+
+
+
+  const mainContent = () => {
+    switch (tabKey) {
+      case "manage":
+        return (<ManagePage 
+          importChatHistory={importChatHistory}
+          setTabKey={setTabKey}
+        />)
+      case "search": 
+        return (<SearchPage 
+          chatRecord={getChatHistory(chatKey)}
+        />)
     }
-    if (!isDataLoaded) {
-      return <Empty description="请先导入聊天记录文件" style={{ padding: '40px 0' }} />;
-    }
-    if (isSearching) {
-      return <List.Item>
-        <Space align="center" justify="center" style={{ width: '100%', padding: '20px 0' }}>
-          <SpinLoading style={{ '--size': '24px' }} />
-          <span>正在搜索...</span>
-        </Space>
-      </List.Item>;
-    }
-    if (query && searchResults.length === 0) {
-      return <Empty description="没有找到匹配的结果" style={{ padding: '40px 0' }} />;
-    }
-    if (!query) {
-      // return <Empty description={`请输入关键词开始搜索`} style={{ padding: '40px 0' }} />;
-      return <></>
-    }
-    return searchResults.map((m) => (
-      <List.Item
-        key={m.id}
-        onClick={() => {
-          navigator.clipboard.writeText(m.text);
-          Toast.show({ content: '已复制到剪贴板', position: 'bottom' });
-        }}
-      >
-        <div style={{ fontSize: 14, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.text}</div>
-        <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>{m.from} @ {m.date}</div>
-      </List.Item>
-    ));
-  };
+  }
 
   return (
-    <div>
-      <NavBar back={null}>聊天记录检索工具</NavBar>
-      <div style={{ padding: '0 16px' }}>
-        <Space direction="vertical" block style={{ '--gap': '12px', marginTop: '12px' }}>
-          {/*<input
-            type="file"
-            accept="application/json"
-            onChange={handleImport}
-            disabled={isImporting}
-          />*/}
-          <Button 
-            color="primary"
-            size="small"
-            fill="solid"
-            onClick={handleImport} 
-            disabled={isImporting}>导入新文件</Button>
-          <SearchBar
-            placeholder="输入文字搜索"
-            value={query}
-            onChange={handleSearch}
-            clearable
-          />
-        </Space>
-        <List header={`搜索结果 (${searchResults.length}/${chatInfo?.count ?? 0})`} style={{marginTop: '12px'}}>
-          {renderListContent()}
-        </List>
+    <div className='app'>
+      <NavBar back={null} className='top'>聊天记录检索工具</NavBar>
+      <div className='body'>
+        {mainContent()}
       </div>
+      <TabBar
+        activeKey={tabKey}
+        onChange={v => { setTabKey(v) }}
+        defaultActiveKey={"search"}
+        className='bottom'
+      >
+        <TabBar.Item key="search" title="搜索" />
+        <TabBar.Item key="manage" title="管理" />
+      </TabBar>  
     </div>
   );
 }

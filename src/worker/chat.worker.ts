@@ -1,25 +1,9 @@
-// 定义类型
-type MessageRecord = {
-  id: number;
-  text: string;
-  from: string;
-  date: string;
-};
+// src/worker/chat.worker.ts
 
-type ChatRecord = {
-  id:string;
-  name: string;
-  messages: MessageRecord[];
-};
+// 从共享的类型文件中导入类型
+import type { MessageRecord, ChatRecord, WorkerMessage } from '../types';
 
-let chatRecord: ChatRecord | null = null;
-
-// 定义接收的消息类型
-type WorkerMessage = 
-  | { type: 'load-from-string'; payload: string } // 从字符串加载（用于文件和localStorage）
-  | { type: 'search'; payload: string };
-
-// 通用的加载逻辑
+// 通用的加载逻辑 (保持不变)
 const processAndLoadData = (dataString: string) => {
   try {
     const json = JSON.parse(dataString);
@@ -32,20 +16,16 @@ const processAndLoadData = (dataString: string) => {
         date: m.date || new Date().toISOString(),
       }));
 
-    chatRecord = {
+    const chatRecord:ChatRecord = {
       id: "default",
       name: json.name || "Unnamed Chat",
+      count: messages.length,
       messages,
     };
 
-    // 将完整的、处理好的对象发回主线程
-    // 主线程将决定是否将其存入 localStorage
-    postMessage({ 
-      type: 'load-complete', 
-      payload: { 
-        chatRecord: chatRecord, 
-        info: { name: chatRecord.name, messageCount: chatRecord.messages.length }
-      } 
+    postMessage({
+      type: 'load-complete',
+      payload: chatRecord
     });
 
   } catch (error) {
@@ -54,7 +34,7 @@ const processAndLoadData = (dataString: string) => {
 };
 
 
-// 监听消息
+// 监听消息 (保持不变)
 self.onmessage = (event: MessageEvent<WorkerMessage>) => {
   const { type, payload } = event.data;
   switch (type) {
@@ -63,15 +43,16 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       break;
 
     case 'search':
-      if (!chatRecord || !payload) {
+      if (!payload.chatRecord || !payload.query) {
         postMessage({ type: 'search-results', payload: [] });
         return;
       }
-      const results = chatRecord.messages.filter(m => m.text.includes(payload));
+      const results = payload.chatRecord.messages.filter(m => m.text.includes(payload.query));
       results.reverse();
       postMessage({ type: 'search-results', payload: results });
       break;
   }
 };
 
+// 只是为了让 TypeScript 认为这是一个模块
 export {};
