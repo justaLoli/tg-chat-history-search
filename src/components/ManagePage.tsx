@@ -57,8 +57,8 @@ export default function ManagePage() {
 				清空本地缓存
 			</Button>
 		</div >
-		<Footer label="本工具所有数据皆在本地处理，请放心使用" 
-			style={{ width: "calc(100 - 20px)", padding: "0 10px" }} /> 
+		<Footer content="本工具所有数据皆在本地处理，请放心使用" 
+			style={{ padding: "0 10px" }} /> 
 	</Space>
 	)
 }
