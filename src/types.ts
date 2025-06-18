@@ -1,5 +1,24 @@
 // src/types.ts
 
+export type AppContext_t = {
+  tabKey: Tab;
+  setTabKey: React.Dispatch<React.SetStateAction<Tab>>;
+  switchTab: (tab: Tab) => void;
+  chatKey: string;
+  setChatKey: React.Dispatch<React.SetStateAction<string>>;
+  mainDataHelper: MainDataHelper;
+}
+
+export type MainDataHelper = {
+  loadMainDataFromLocalStorage: () => void;
+  importChatHistory: (dataString: string, key: string) => void;
+  getChatHistory: (key: string) => ChatRecord | null;
+  clearLocalStorage: () => void;
+}
+
+export type Tab = "search" | "manage";
+
+
 /** 消息记录 */
 export type MessageRecord = {
   id: number;

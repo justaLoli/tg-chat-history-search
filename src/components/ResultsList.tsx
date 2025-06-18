@@ -2,6 +2,7 @@
 
 import { List, Space, SpinLoading, Empty, Toast } from 'antd-mobile';
 import type { MessageRecord } from '../types';
+import { useGlobal } from './GlobalProvider';
 
 interface ResultsListProps {
   isImporting: boolean;
@@ -9,7 +10,7 @@ interface ResultsListProps {
   isSearching: boolean;
   query: string;
   searchResults: MessageRecord[];
-  messageCount:number | undefined;
+  messageCount: number | undefined;
 }
 
 export default function ResultsList({
@@ -20,6 +21,8 @@ export default function ResultsList({
   searchResults,
   messageCount
 }: ResultsListProps) {
+
+  const { switchTab } = useGlobal();
 
   // 渲染列表的内部内容
   const renderContent = () => {
@@ -34,7 +37,22 @@ export default function ResultsList({
       );
     }
     if (!isDataLoaded) {
-      return <Empty description="请先导入聊天记录文件" style={{ padding: '40px 0' }} />;
+      return (
+        <Empty
+          description={
+            <span>
+              请先在
+              <span
+                style={{ color: 'var(--adm-color-primary)', cursor: 'pointer' }}
+                onClick={() => switchTab('manage')} // 假设 switchTab 函数在当前作用域可访问
+              >
+                管理页面
+              </span>
+              导入聊天记录文件
+            </span>
+          }
+          style={{ padding: '40px 0' }}
+        />)
     }
     if (isSearching) {
       return (
