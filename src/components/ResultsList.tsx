@@ -85,7 +85,10 @@ export default function ResultsList({
   };
 
   return (
-    <List header={`搜索结果 (${searchResults.length}/${messageCount ?? 0})`} style={{ marginTop: '12px' }}>
+    <List 
+      header={`搜索结果 (${searchResults.length}/${messageCount ?? 0})`} 
+      mode='card'
+    >
       {renderContent()}
     </List>
   );

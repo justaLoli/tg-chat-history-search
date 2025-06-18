@@ -45,7 +45,7 @@ export default function ManagePage() {
 				disabled={isImporting}
 				style={{ flex: 1 }} // 让按钮平均占据可用空间
 			>
-				导入新文件
+				导入聊天记录
 			</Button>
 			<Button
 				color="warning"

@@ -59,8 +59,10 @@ export default function SearchPage({
   };
 
   return (
-    <div style={{ padding: '0 16px' }}>
-      <Space direction="vertical" block style={{ '--gap': '12px', marginTop: '12px' }}>
+    <div 
+      style={{ padding: '0 10px' }}
+    >
+      <Space direction="vertical" block style={{ '--gap': '12px', marginBottom: '12px' }}>
         <SearchBar
           placeholder="输入文字搜索"
           value={query}
@@ -68,7 +70,10 @@ export default function SearchPage({
           clearable
         />
       </Space>
-
+      <div style={{
+        maxHeight: 'calc(100vh - 200px)',
+        overflow: "scroll"
+      }}>
       <ResultsList
         isImporting={false}
         isDataLoaded={chatRecord !== null}
@@ -76,7 +81,7 @@ export default function SearchPage({
         query={query}
         searchResults={searchResults}
         messageCount={chatRecord?.count}
-      />
+      /></div>
     </div>
   );
 }

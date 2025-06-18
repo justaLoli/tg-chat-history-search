@@ -16,7 +16,7 @@ export type MainDataHelper = {
   clearLocalStorage: () => void;
 }
 
-export type Tab = "search" | "manage";
+export type Tab = "search" | "manage" | "statistic";
 
 
 /** 消息记录 */

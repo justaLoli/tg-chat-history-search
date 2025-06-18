@@ -5,7 +5,8 @@ import SearchPage from './components/SearchPage'; // 引入我们新的主内容
 import ManagePage from './components/ManagePage';
 import { GlobalProvider, useGlobal } from './components/GlobalProvider';
 import { Tab } from './types';
-import { SearchOutline, SetOutline } from 'antd-mobile-icons';
+import { HistogramOutline, SearchOutline, SetOutline } from 'antd-mobile-icons';
+import StatisticPage from './components/StatisticPage';
 
 
 const BodyContent = () => {
@@ -19,25 +20,34 @@ const BodyContent = () => {
         return (<SearchPage 
           chatRecord={mainDataHelper.getChatHistory(chatKey)}
         />);
+      case "statistic":
+        return (<StatisticPage />)
     }
   })();
   return (<div className='body'> {content} </div>)
 }
 const BottomContent = () => {
-  const {tabKey, setTabKey} = useGlobal();
+  const { tabKey, setTabKey } = useGlobal();
   return (<TabBar
     activeKey={tabKey}
     onChange={v => { setTabKey(v as Tab) }}
     defaultActiveKey={"search"}
     className='bottom'
   >
-    <TabBar.Item key="search" title="搜索" icon={<SearchOutline/>} />
-    <TabBar.Item key="manage" title="管理" icon={<SetOutline/>} />
+    <TabBar.Item key="search" title="搜索" icon={<SearchOutline />} />
+    <TabBar.Item key="statistic" title="统计" icon={<HistogramOutline />} />
+    <TabBar.Item key="manage" title="管理" icon={<SetOutline />} />
   </TabBar>)
 }
 const TopContent = () => {
-  const {tabKey} = useGlobal();
-  return <NavBar back={null} className='top'>{tabKey==="search"?"搜索":"管理"}</NavBar>
+  const { tabKey } = useGlobal();
+  return <NavBar back={null} className='top'>{
+    (()=>{switch(tabKey){
+      case "search": return "搜索";
+      case "statistic": return "统计";
+      case "manage": return "管理";
+    }})()
+  }</NavBar>
 }
 
 export default function App() {
