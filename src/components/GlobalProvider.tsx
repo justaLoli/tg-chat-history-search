@@ -105,7 +105,6 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
 export function useGlobal(): AppContext_t {
   const context = useContext(AppContext);
   if (!context) {
-    // 这里的报错信息有个小笔误，应该是 useGlobal
     throw new Error('useGlobal 必须在 GlobalProvider 内部使用');
   }
   return context;

@@ -1,36 +1,100 @@
-import { Button, Footer, Space, Toast } from "antd-mobile";
+import { Button, Footer, NavBar, Space, Toast } from "antd-mobile";
 import { useState } from "react";
 import { useGlobal } from "./GlobalProvider";
+import { MessageRecord } from "../types";
 
 
 export default function ManagePage() {
 
-	const { switchTab, mainDataHelper } = useGlobal();
+	const { switchTab, mainDataHelper, chatKey } = useGlobal();
 
 	const handleImport = async () => {
-		const input = document.createElement('input');
-		input.type = "file";
-		input.addEventListener('change', async () => {
-			const file = input.files?.[0];
-			if (!file) return;
+		const getFileFromInput = () =>
+			new Promise<File | undefined>(resolve => {
+				const input = document.createElement('input');
+				input.type = "file";
+				input.oncancel = () => resolve(undefined);
+				input.onchange = () => resolve(input.files?.[0]);
+				input.click();
+			});
+		const importFile = async (file: File) => {
 			setIsImporting(true);
-			const text = await file.text(); try {
+			const text = await file.text();
+			try {
 				mainDataHelper.importChatHistory(text, "default");
-				setIsImporting(false);
 				switchTab("search");
 			} catch (error) {
+				Toast.show({icon:"fail", content: "导入发生错误"})
+			}finally {
 				setIsImporting(false);
 			}
-		})
-		input.click();
+		};
+		const file = await getFileFromInput();
+		if(!file) return;
+		await importFile(file);
 	};
+
+	const handleClearData = () => {
+		mainDataHelper.clearLocalStorage();
+		Toast.show({ content: "已清除" })
+	}
+
+	const handleMinify = () => {
+		const messages = mainDataHelper.getChatHistory(chatKey)?.messages;
+		if (!messages) {
+			Toast.show({ icon: 'fail', content: "未导入数据" })
+			return;
+		}
+		const truncateWords = (text: string, limit: number = 100): string => {
+			const words = text.trim().split(/\s+/);
+			if (words.length <= limit) return text;
+			return words.slice(0, limit).join(" ") + "...";
+		};
+		const normalizeNewlines = (text: string): string => {
+			// 把换行变成可见符号
+			return text.replace(/\r?\n/g, " ⏎ ");
+		};
+		const extractDate = (date: string): string => {
+			return date.slice(0, 10);
+		};
+		const buildChatText = (messages: MessageRecord[]): string => {
+			let result: string[] = [];
+			let lastDate = "";
+			messages.forEach(msg => {
+				const currentDate = extractDate(msg.date);
+				if (currentDate !== lastDate) {
+					result.push(currentDate);
+					lastDate = currentDate;
+				}
+				let text = msg.text;
+				text = normalizeNewlines(text);
+				text = truncateWords(text, 100);
+				result.push(`${msg.from}: ${text}`);
+			})
+			return result.join("\n");
+		};
+		const downloadText = (text: string, filename: string) => {
+			const blob = new Blob([text], { type: "text/plain" });
+			const url = URL.createObjectURL(blob);
+
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = filename;
+			a.click();
+
+			URL.revokeObjectURL(url);
+		};
+		downloadText(buildChatText(messages), "messages.txt");
+		Toast.show({ content: "以发起下载" })
+	}
 
 	const [isImporting, setIsImporting] = useState(false);
 
 	return (<Space direction="vertical" block >
+		{/*First Line*/}
 		<div
 			style={{
-				width: "calc(100 - 20px)",
+				width: "calc(100% - 20px)",
 				display: "flex",           // 启用 Flexbox 布局
 				justifyContent: "space-between", // 在项目之间平均分配空间
 				gap: "10px",               // 设置项目之间的间距
@@ -52,9 +116,30 @@ export default function ManagePage() {
 				fill="solid"
 				style={{ flex: 1 }} // 让按钮平均占据可用空间
 				disabled={isImporting}
-				onClick={() => { mainDataHelper.clearLocalStorage(); Toast.show({ content: "已清除" }) }}
+				onClick={handleClearData}
 			>
 				清空本地缓存
+			</Button>
+		</div >
+		{/*Second Line*/}
+		<NavBar back={null}> 其它工具 </NavBar>
+		<div
+			style={{
+				width: "calc(100% - 20px)",
+				display: "flex",           // 启用 Flexbox 布局
+				justifyContent: "space-between", // 在项目之间平均分配空间
+				gap: "10px",               // 设置项目之间的间距
+				padding: "0 10px"          // 可选：给容器左右留白，让按钮不紧贴边缘
+			}}
+		>
+			<Button
+				color="default"
+				fill="solid"
+				onClick={handleMinify}
+				disabled={isImporting}
+				style={{ flex: 1 }} // 让按钮平均占据可用空间
+			>
+				简化聊天记录为TXT
 			</Button>
 		</div >
 		<Footer content="本工具所有数据皆在本地处理，请放心使用" 
