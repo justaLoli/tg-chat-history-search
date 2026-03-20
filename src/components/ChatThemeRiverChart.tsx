@@ -121,11 +121,12 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
         bottom: "3%",
         left: "center",
         textStyle: {
-          fontSize: 16
+          fontSize: 16,
+          color: "#A3A3A3"
         },
         subtextStyle: {
           fontSize: 10,
-          color: "#999"
+          color: "##777777"
         },
       },
       tooltip: {
@@ -143,7 +144,8 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
         top: "6%",
         orient: "horizontal",
         textStyle: {
-          fontSize: 10
+          fontSize: 10,
+          color: "#999999"
         }
       },
       toolbox: {
@@ -155,7 +157,7 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
         bottom: "20%",
         axisLabel: {
           fontSize: 9,
-          color: "#666"
+          color: "#888888"
         },
       },
       series: [
