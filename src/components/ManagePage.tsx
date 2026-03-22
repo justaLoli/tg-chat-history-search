@@ -94,11 +94,9 @@ export default function ManagePage() {
 		{/*First Line*/}
 		<div
 			style={{
-				width: "calc(100% - 20px)",
 				display: "flex",           // 启用 Flexbox 布局
 				justifyContent: "space-between", // 在项目之间平均分配空间
 				gap: "10px",               // 设置项目之间的间距
-				padding: "0 10px"          // 可选：给容器左右留白，让按钮不紧贴边缘
 			}}
 		>
 			<Button
@@ -125,11 +123,9 @@ export default function ManagePage() {
 		<NavBar back={null}> 其它工具 </NavBar>
 		<div
 			style={{
-				width: "calc(100% - 20px)",
 				display: "flex",           // 启用 Flexbox 布局
 				justifyContent: "space-between", // 在项目之间平均分配空间
 				gap: "10px",               // 设置项目之间的间距
-				padding: "0 10px"          // 可选：给容器左右留白，让按钮不紧贴边缘
 			}}
 		>
 			<Button
@@ -142,8 +138,7 @@ export default function ManagePage() {
 				简化聊天记录为TXT
 			</Button>
 		</div >
-		<Footer content="本工具所有数据皆在本地处理，请放心使用" 
-			style={{ padding: "0 10px" }} /> 
+		<Footer content="本工具所有数据皆在本地处理，请放心使用" /> 
 	</Space>
 	)
 }
