@@ -1,7 +1,7 @@
 // src/components/SearchPage.tsx
 
 import { useState, useEffect, useRef } from "react";
-import { SearchBar, Space, Toast } from "antd-mobile";
+import { SearchBar, Toast } from "antd-mobile";
 import ResultsList from "./ResultsList"; // 导入新的列表组件
 import type { MessageRecord, WorkerResponse, ChatRecord } from "../types";
 
@@ -54,34 +54,32 @@ export default function SearchPage({
     }
     setIsSearching(true);
     debounceTimerRef.current = window.setTimeout(() => {
-      workerRef.current?.postMessage( { type: 'search', payload: {chatRecord: chatRecord, query: q} });
+      workerRef.current?.postMessage({ type: 'search', payload: { chatRecord: chatRecord, query: q } });
     }, 300);
   };
 
   return (
-    <div 
-      style={{ padding: '0 10px' }}
-    >
-      <Space direction="vertical" block style={{ '--gap': '12px', marginBottom: '12px' }}>
-        <SearchBar
-          placeholder="输入文字搜索"
-          value={query}
-          onChange={handleSearch}
-          clearable
-        />
-      </Space>
+    <>
+      <SearchBar
+        placeholder="输入文字搜索"
+        value={query}
+        onChange={handleSearch}
+        clearable
+        style={{ marginBottom: '12px' }}
+      />
       <div style={{
         maxHeight: 'calc(100vh - 200px)',
         overflow: "scroll"
       }}>
-      <ResultsList
-        isImporting={false}
-        isDataLoaded={chatRecord !== null}
-        isSearching={isSearching}
-        query={query}
-        searchResults={searchResults}
-        messageCount={chatRecord?.count}
-      /></div>
-    </div>
+        <ResultsList
+          isImporting={false}
+          isDataLoaded={chatRecord !== null}
+          isSearching={isSearching}
+          query={query}
+          searchResults={searchResults}
+          messageCount={chatRecord?.count}
+        />
+      </div>
+    </>
   );
 }

@@ -137,7 +137,7 @@ const DailyMessageChart: React.FC<DailyMessageChartProps> = ({ messages, style }
   const { sender1, sender2, xData, yDataSender1, yDataSender2 } = chartData;
 
   // --- ECHARTS OPTION (replicates the pyecharts configuration) ---
-  const option: EChartsOption = {
+  const option: any = {
     title: {
       text: "Daily Message Comparison (UTC+8, 5am-5am)",
     },

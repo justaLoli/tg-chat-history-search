@@ -39,24 +39,24 @@ const ChatThemeRiverChartHour = ({ messages }: ChatThemeRiverChartProps) => {
     // --- 2. 数据聚合 (替代 Pandas GroupBy & Pivot) ---
     // 结构: { 'YYYY-MM-dd': { 'senderA': count, 'senderB': count } }
     type MonthlyCountsBySender = {
-      [month: string]: {[sender: string]: number} //Record<string, Record<string, number>>;
+      [month: string]: { [sender: string]: number } //Record<string, Record<string, number>>;
     }
     const monthlyCountsBySender = validMessages.reduce<MonthlyCountsBySender>((acc, msg) => {
-        // 使用 Day.js 解析日期并转换为上海时区，然后格式化为 'YYYY-MM'
-        const month = dayjs(msg.date).tz('Asia/Shanghai').subtract(4,'hour').startOf('day').format('YYYY-MM-DD');
-        // const month = dayjs(msg.date).tz('Asia/Shanghai').format('YYYY-MM-DD');
-        const sender = msg.from!; // 我们已经过滤了 undefined 的情况
+      // 使用 Day.js 解析日期并转换为上海时区，然后格式化为 'YYYY-MM'
+      const month = dayjs(msg.date).tz('Asia/Shanghai').subtract(4, 'hour').startOf('day').format('YYYY-MM-DD');
+      // const month = dayjs(msg.date).tz('Asia/Shanghai').format('YYYY-MM-DD');
+      const sender = msg.from!; // 我们已经过滤了 undefined 的情况
         
-        // 初始化月份和发送者
-        acc[month] = acc[month] || {};
-        acc[month][sender] = (acc[month][sender] || 0) + 1;
+      // 初始化月份和发送者
+      acc[month] = acc[month] || {};
+      acc[month][sender] = (acc[month][sender] || 0) + 1;
         
-        return acc;
+      return acc;
     }, {});
     
     // --- 3. 聚合次要发送者为 "Others" ---
     type TotalCountsBySender = {
-      [sender:string]:number
+      [sender: string]: number
     }
     const totalCountsBySender: TotalCountsBySender = {};
     let totalMessages = 0;
@@ -96,7 +96,7 @@ const ChatThemeRiverChartHour = ({ messages }: ChatThemeRiverChartProps) => {
       });
       dataWithOthers = processedData;
     } else {
-       console.log("未检测到次要发送者。");
+      console.log("未检测到次要发送者。");
     }
 
     // --- 4. 数据格式转换 (为 ECharts 准备) ---
@@ -183,23 +183,20 @@ const ChatThemeRiverChartHour = ({ messages }: ChatThemeRiverChartProps) => {
 
   const [chartOption, setChartOption] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  useEffect(()=>{
+  useEffect(() => {
     setIsLoading(true);
     const timer = setTimeout(() => {
       const t = generateChartOption();
       setChartOption(t);
       setIsLoading(false);
-    },0);
+    }, 0);
     return () => clearTimeout(timer);
   }, [messages]);
 
   if (isLoading) {
     return (
-      // <div style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
-      //   <SpinLoading style={{ '--size': '48px' }} />
-      // </div>
       <Space direction='vertical' style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
-        <SpinLoading style={{'--size': '48px'}} />
+        <SpinLoading style={{ '--size': '48px' }} />
         <div> 正在加载中 </div>
       </Space>
     );
@@ -214,7 +211,7 @@ const ChatThemeRiverChartHour = ({ messages }: ChatThemeRiverChartProps) => {
   return (
     <ReactECharts
       option={chartOption}
-      style={{ height: '500px', width: 'calc(100% - 20px)' }}
+      style={{ height: '500px' }}
       notMerge={true}
       lazyUpdate={true}
     />
