@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import ChatThemeRiverChart from "./ChatThemeRiverChart";
 import { useGlobal } from "./GlobalProvider"
-import { Empty } from "antd-mobile";
+import { Empty, Space } from "antd-mobile";
+import ChatThemeRiverChart from "./charts/ChatThemeRiverChart";
+import ChatThemeRiverChartHour from "./charts/ChatThemeRiverChart-hour";
 
 const StatisticPage = ()=>{
 
@@ -12,10 +13,8 @@ const StatisticPage = ()=>{
 		()=>{setChatRecord(mainDataHelper.getChatHistory(chatKey))}
 		, [chatKey, mainDataHelper] );
 
-	return (chatRecord? 
-		(<ChatThemeRiverChart messages={chatRecord!.messages} />)
-		:(
-        <Empty
+  if(!chatRecord?.messages) {
+    return (<Empty
           description={
             <span>
               请先在
@@ -29,9 +28,15 @@ const StatisticPage = ()=>{
             </span>
           }
           style={{ padding: '40px 0' }}
-        />))
+        />)
+  }
 
-	// <ChatThemeRiverChart messages={mainDataHelper.getChatHistory(chatKey)} />)
+	return (
+    <Space direction="vertical" style={{width:"100%"}}> 
+      <ChatThemeRiverChart messages={chatRecord!.messages} />
+      <ChatThemeRiverChartHour messages={chatRecord!.messages} />
+    </Space>
+  )
 };
 
 export default StatisticPage;

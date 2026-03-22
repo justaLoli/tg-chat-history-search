@@ -1,11 +1,12 @@
 // src/components/ChatThemeRiverChart.tsx
 
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { MessageRecord } from '../types';
+import { MessageRecord } from '../../types';
+import { Space, SpinLoading } from 'antd-mobile';
 
 // 初始化 Day.js 插件
 dayjs.extend(utc);
@@ -18,16 +19,15 @@ interface ChatThemeRiverChartProps {
 
 /**
  * 一个React组件，用于统计每月不同发送者的聊天数，
- * 合并次要贡献者，并生成一个适合移动端展示的主题河流图。
+ * 合并发言过少的次要贡献者，并生成一个适合移动端展示的主题河流图。
  * 
  * @param {ChatThemeRiverChartProps} props - 组件的 props.
  * @param {Message[]} props.messages - 聊天消息数组.
  * @returns {React.ReactNode} - 渲染出的图表或提示信息.
  */
-const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
+const ChatThemeRiverChartHour = ({ messages }: ChatThemeRiverChartProps) => {
   
-  // 使用 useMemo 来缓存计算结果，只有当 messages 改变时才重新计算
-  const chartOption = useMemo(() => {
+  const generateChartOption = () => {
     // --- 1. 数据加载与清洗 ---
     // 从 props 获取数据，并过滤掉没有 'from' 字段的消息
     const validMessages = messages.filter(msg => msg.from);
@@ -37,10 +37,14 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
     }
 
     // --- 2. 数据聚合 (替代 Pandas GroupBy & Pivot) ---
-    // 结构: { 'YYYY-MM': { 'senderA': count, 'senderB': count } }
-    const monthlyCountsBySender = validMessages.reduce<Record<string, Record<string, number>>>((acc, msg) => {
+    // 结构: { 'YYYY-MM-dd': { 'senderA': count, 'senderB': count } }
+    type MonthlyCountsBySender = {
+      [month: string]: {[sender: string]: number} //Record<string, Record<string, number>>;
+    }
+    const monthlyCountsBySender = validMessages.reduce<MonthlyCountsBySender>((acc, msg) => {
         // 使用 Day.js 解析日期并转换为上海时区，然后格式化为 'YYYY-MM'
-        const month = dayjs(msg.date).tz('Asia/Shanghai').format('YYYY-MM');
+        const month = dayjs(msg.date).tz('Asia/Shanghai').subtract(4,'hour').startOf('day').format('YYYY-MM-DD');
+        // const month = dayjs(msg.date).tz('Asia/Shanghai').format('YYYY-MM-DD');
         const sender = msg.from!; // 我们已经过滤了 undefined 的情况
         
         // 初始化月份和发送者
@@ -51,21 +55,22 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
     }, {});
     
     // --- 3. 聚合次要发送者为 "Others" ---
-    const senderTotals: Record<string, number> = {};
+    type TotalCountsBySender = {
+      [sender:string]:number
+    }
+    const totalCountsBySender: TotalCountsBySender = {};
     let totalMessages = 0;
 
     Object.values(monthlyCountsBySender).forEach(monthData => {
       Object.entries(monthData).forEach(([sender, count]) => {
-        senderTotals[sender] = (senderTotals[sender] || 0) + count;
+        totalCountsBySender[sender] = (totalCountsBySender[sender] || 0) + count;
         totalMessages += count;
       });
     });
-
     const threshold = totalMessages * 0.01;
-    const minorSenders = Object.keys(senderTotals).filter(
-      sender => senderTotals[sender] < threshold
+    const minorSenders = Object.keys(totalCountsBySender).filter(
+      sender => totalCountsBySender[sender] < threshold
     );
-
     let dataWithOthers = monthlyCountsBySender;
     
     if (minorSenders.length > 0) {
@@ -102,7 +107,8 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
       Object.entries(monthData).forEach(([sender, count]) => {
         if (count > 0) {
           // ECharts 主题河流图需要 [日期, 数值, 系列名] 格式
-          chartData.push([`${month}-01`, count, sender]);
+          // chartData.push([`${month}-01`, count, sender]);
+          chartData.push([`${month}`, count, sender]);
           allSenders.add(sender);
         }
       });
@@ -116,7 +122,7 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
     // --- 5. ECharts 配置 (直接从 Pyecharts 配置翻译) ---
     return {
       title: {
-        title: "月度聊天动态",
+        text: "每日聊天动态（4时-次日4时）",
         subtext: subtitle_text,
         bottom: "3%",
         left: "center",
@@ -126,7 +132,7 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
         },
         subtextStyle: {
           fontSize: 10,
-          color: "##777777"
+          color: "#777777"
         },
       },
       tooltip: {
@@ -173,8 +179,31 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
         }
       ],
     };
+  }
 
-  }, [messages]); // 依赖项数组
+  const [chartOption, setChartOption] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(()=>{
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      const t = generateChartOption();
+      setChartOption(t);
+      setIsLoading(false);
+    },0);
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  if (isLoading) {
+    return (
+      // <div style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
+      //   <SpinLoading style={{ '--size': '48px' }} />
+      // </div>
+      <Space direction='vertical' style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
+        <SpinLoading style={{'--size': '48px'}} />
+        <div> 正在加载中 </div>
+      </Space>
+    );
+  }
 
   // 如果没有有效数据或计算结果为空，显示提示信息
   if (!chartOption) {
@@ -192,4 +221,4 @@ const ChatThemeRiverChart = ({ messages }: ChatThemeRiverChartProps) => {
   );
 };
 
-export default ChatThemeRiverChart;
+export default ChatThemeRiverChartHour;
