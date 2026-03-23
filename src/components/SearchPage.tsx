@@ -41,7 +41,7 @@ export default function SearchPage({
   const handleSearch = (q: string) => {
     setQuery(q);
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    if (!q) {
+    if (q.trim() === '') {
       setSearchResults([]);
       setIsSearching(false);
       return;
@@ -49,7 +49,7 @@ export default function SearchPage({
     setIsSearching(true);
     debounceTimerRef.current = window.setTimeout(() => {
       if (!chatRecord) { return; }
-      workerRef.current?.postMessage({ chatRecord, query });
+      workerRef.current?.postMessage({ chatRecord, query: q });
     }, 300);
   };
 
