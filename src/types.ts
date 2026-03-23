@@ -1,6 +1,7 @@
 // src/types.ts
 
-export type AppContext_t = {
+// ===Global Data===
+export type AppContext = {
   tabKey: Tab;
   setTabKey: React.Dispatch<React.SetStateAction<Tab>>;
   switchTab: (tab: Tab) => void;
@@ -16,10 +17,23 @@ export type MainDataHelper = {
   clearLocalStorage: () => void;
 }
 
+// ===Tab===
 export type Tab = "search" | "manage" | "statistic";
 
 
-/** 消息记录 */
+// ===Data Structure===
+// 对应多个聊天（目前只有一个）
+export type MainData = {
+  [key: string]: ChatRecord;
+};
+// 每个聊天：存储相关信息，以及一个消息列表
+export type ChatRecord = {
+  id: string;
+  name: string;
+  count: number;
+  messages: MessageRecord[];
+};
+// 每个消息：相关信息
 export type MessageRecord = {
   id: number;
   text: string;
@@ -27,19 +41,19 @@ export type MessageRecord = {
   date: string;
 };
 
-export type MainData = {
-  [key: string]: ChatRecord;
-};
 
-/** 聊天记录文件整体结构 */
-export type ChatRecord = {
-  id: string;
-  name: string;
-  count: number;
-  messages: MessageRecord[];
-};
+// ===Worker Typing===
 
-/** Worker 发送给主线程的消息类型 */
+//these two are used internally, no export needed.
+interface TypedWorker<TMessage, TResponse> extends Omit<Worker, 'postMessage' | 'onmessage'> {
+  onmessage: (event: MessageEvent<TResponse>) => any;
+  postMessage: (message: TMessage) => any;
+}
+interface TypedWorkerSelf<TMessage, TResponse> {
+  onmessage: (event: MessageEvent<TMessage>) => void;
+  postMessage: (msg: TResponse) => void;
+}
+
 export namespace SearchWorker {
   export type Message = {
     chatRecord: ChatRecord;
@@ -48,14 +62,8 @@ export namespace SearchWorker {
   export type Response = {
     searchResults: MessageRecord[];
   };
-  export interface WorkerInterface extends Omit<Worker, 'postMessage' | 'onmessage'> {
-    onmessage: (event: MessageEvent<Response>) => any;
-    postMessage: (message: Message) => any;
-  };
-  export interface WorkerSelf {
-    onmessage: (event: MessageEvent<Message>) => void;
-    postMessage: (msg: Response) => void;
-  }
+  export type WorkerInterface = TypedWorker<Message, Response>;
+  export type WorkerSelf = TypedWorkerSelf<Message, Response>;
 };
 
 export namespace ThemeRiverChartWorker {
@@ -69,12 +77,6 @@ export namespace ThemeRiverChartWorker {
     start_date: string,
     end_date: string
   };
-  export interface WorkerInterface extends Omit<Worker, 'postMessage' | 'onmessage'> {
-    onmessage: (event: MessageEvent<Response>) => any;
-    postMessage: (message: Message) => any;
-  };
-  export interface WorkerSelf {
-    onmessage: (event: MessageEvent<Message>) => void;
-    postMessage: (msg: Response) => void;
-  }
+  export type WorkerInterface = TypedWorker<Message, Response>;
+  export type WorkerSelf = TypedWorkerSelf<Message, Response>;
 }

@@ -1,9 +1,9 @@
 import { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
-import { ChatRecord, MainData, MessageRecord, AppContext_t, Tab, MainDataHelper } from '../types';
+import { ChatRecord, MainData, MessageRecord, AppContext, Tab, MainDataHelper } from '../types';
 import localforage from 'localforage'
 
 // 1. 创建 Context
-const AppContext = createContext<AppContext_t | null>(null);
+const appContext = createContext<AppContext | null>(null);
 const STORAGE_KEY = 'chat-history-data';
 
 // 2. 创建一个 Provider 组件，它将管理状态
@@ -93,7 +93,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   // 这样，只有当 value 对象中的任何一个值（tabKey, chatKey, mainDataHelper, switchTab）发生变化时，
   // 这个 value 对象才会被重新创建，从而避免不必要的子组件重渲染。
   // useState 返回的 setter 函数 (setTabKey, setChatKey) 是稳定的，无需作为依赖。
-  const value: AppContext_t = useMemo(() => ({
+  const value: AppContext = useMemo(() => ({
     tabKey,
     setTabKey,
     switchTab,
@@ -103,15 +103,15 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   }), [tabKey, chatKey, mainDataHelper, switchTab]);
 
   return (
-    <AppContext.Provider value={value}>
+    <appContext.Provider value={value}>
       {children}
-    </AppContext.Provider>
+    </appContext.Provider>
   );
 }
 
 // 3. 创建一个自定义 Hook，方便子组件使用
-export function useGlobal(): AppContext_t {
-  const context = useContext(AppContext);
+export function useGlobal(): AppContext {
+  const context = useContext(appContext);
   if (!context) {
     throw new Error('useGlobal 必须在 GlobalProvider 内部使用');
   }
