@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { SearchBar, Toast } from "antd-mobile";
 import ResultsList from "./ResultsList";
 import type { MessageRecord, ChatRecord, SearchWorker } from "../types";
+import _SearchWorker from '../worker/chat.worker?worker';
+
 
 interface SearchPageProps {
   chatRecord: ChatRecord | null;
@@ -21,10 +23,10 @@ export default function SearchPage({
 
   //初始化Worker（尚不调用）
   useEffect(() => {
-    workerRef.current = new Worker(new URL('../worker/chat.worker.ts', import.meta.url), { type: 'module' }) as SearchWorker.WorkerInterface;
-    workerRef.current.onmessage = (event: MessageEvent<SearchWorker.Response>) => {
-      const { searchResults } = event.data;
-      setSearchResults(searchResults);
+    workerRef.current?.terminate(); // terminate existing worker (idk if this is necessary, just in case)
+    workerRef.current = new _SearchWorker as SearchWorker.WorkerInterface;
+    workerRef.current.onmessage = ({ data }) => {
+      setSearchResults(data.searchResults);
       setIsSearching(false);
     }
     workerRef.current.onerror = (error) => {

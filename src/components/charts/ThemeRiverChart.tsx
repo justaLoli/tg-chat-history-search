@@ -1,26 +1,15 @@
-// src/components/ChatThemeRiverChart.tsx
-
 import { useEffect, useRef, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { MessageRecord, ThemeRiverChartWorker } from '../../types';
 import { Space, SpinLoading } from 'antd-mobile';
 import ThemeRiverWorker from '../../worker/ThemeRiverChartData.worker?worker';
 
-
-// 定义组件的 Props 类型
 interface ChatThemeRiverChartProps {
   messages: MessageRecord[];
+  groupmode: ThemeRiverChartWorker.Message['groupmode']
 }
 
-/**
- * 一个React组件，用于统计每月不同发送者的聊天数，
- * 合并发言过少的次要贡献者，并生成一个适合移动端展示的主题河流图。
- * 
- * @param {ChatThemeRiverChartProps} props - 组件的 props.
- * @param {Message[]} props.messages - 聊天消息数组.
- * @returns {React.ReactNode} - 渲染出的图表或提示信息.
- */
-const ChatThemeRiverChartDay = ({ messages }: ChatThemeRiverChartProps) => {
+const ChatThemeRiverChart = ({ messages, groupmode }: ChatThemeRiverChartProps) => {
 
   const [chartOption, setChartOption] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -28,21 +17,23 @@ const ChatThemeRiverChartDay = ({ messages }: ChatThemeRiverChartProps) => {
   const workerRef = useRef<ThemeRiverChartWorker.WorkerInterface | null>(null);
   useEffect(() => {
     setIsLoading(true);
-    const worker = new ThemeRiverWorker;
-    workerRef.current = worker as ThemeRiverChartWorker.WorkerInterface;
-    worker.onmessage = (event) => {
-      const chartData = event.data;
-      setChartOption(generateChartOption(chartData));
+    // terminate existing worker (idk if this is necessary, just in case)
+    workerRef.current?.terminate();
+    workerRef.current = null;
+    // set new worker
+    workerRef.current = new ThemeRiverWorker as ThemeRiverChartWorker.WorkerInterface;
+    workerRef.current.onmessage = ({ data }) => {
+      setChartOption(generateChartOption(data, groupmode));
       setIsLoading(false);
     }
-    worker.onerror = () => {
+    workerRef.current.onerror = () => {
       setChartOption(null);
       setIsLoading(false);
     }
-    worker.postMessage({ messages, groupmode: 'day' });
+    workerRef.current.postMessage({ messages, groupmode });
     return () => {
       console.log("Terminating worker");
-      worker.terminate();
+      workerRef.current?.terminate();
       workerRef.current = null;
     };
   }, [messages]);
@@ -72,15 +63,25 @@ const ChatThemeRiverChartDay = ({ messages }: ChatThemeRiverChartProps) => {
   );
 };
 
-export default ChatThemeRiverChartDay;
+export default ChatThemeRiverChart;
 
-const generateChartOption = (chatData: ThemeRiverChartWorker.Response) => {
-  const {allSenders, chartData, start_date, end_date} = chatData;
-  const subtitle_text = `数据区间: ${start_date} 至 ${end_date}`;
+
+const generateChartOption = (
+  chatData: ThemeRiverChartWorker.Response, 
+  groupmode: ThemeRiverChartWorker.Message['groupmode']
+) => {
+  const { allSenders, chartData, start_date, end_date } = chatData;
+  const subtitleText = `数据区间: ${start_date} 至 ${end_date}`;
+  const titleText = (() => {
+    switch (groupmode) {
+      case ('month'): return "月度聊天动态";
+      case ('day'): return "每日聊天动态（4时-次日4时）";
+    }
+  })();
   return {
     title: {
-      text: "每日聊天动态（4时-次日4时）",
-      subtext: subtitle_text,
+      text: titleText,
+      subtext: subtitleText,
       bottom: "3%",
       left: "center",
       textStyle: {
