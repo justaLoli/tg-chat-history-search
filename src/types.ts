@@ -40,16 +40,23 @@ export type ChatRecord = {
 };
 
 /** Worker 发送给主线程的消息类型 */
-export type WorkerResponse =
-  | { type: 'load-complete'; payload: ChatRecord }
-  | { type: 'search-results'; payload: MessageRecord[] }
-  | { type: 'error'; payload: string };
-
-/** 主线程发送给 Worker 的消息类型 */
-export type WorkerMessage =
-  | { type: 'load-from-string'; payload: string }
-  | { type: 'search'; payload: { chatRecord: ChatRecord, query: string } };
-
+export namespace SearchWorker {
+  export type Message = {
+    chatRecord: ChatRecord;
+    query: string;
+  };
+  export type Response = {
+    searchResults: MessageRecord[];
+  };
+  export interface WorkerInterface extends Omit<Worker, 'postMessage' | 'onmessage'> {
+    onmessage: (event: MessageEvent<Response>) => any;
+    postMessage: (message: Message) => any;
+  };
+  export interface WorkerSelf {
+    onmessage: (event: MessageEvent<Message>) => void;
+    postMessage: (msg: Response) => void;
+  }
+};
 
 export namespace ThemeRiverChartWorker {
   export type Message = {
@@ -61,5 +68,13 @@ export namespace ThemeRiverChartWorker {
     chartData: [date: string, count: number, sender: string][];
     start_date: string,
     end_date: string
+  };
+  export interface WorkerInterface extends Omit<Worker, 'postMessage' | 'onmessage'> {
+    onmessage: (event: MessageEvent<Response>) => any;
+    postMessage: (message: Message) => any;
+  };
+  export interface WorkerSelf {
+    onmessage: (event: MessageEvent<Message>) => void;
+    postMessage: (msg: Response) => void;
   }
 }

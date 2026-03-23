@@ -7,9 +7,23 @@ import { MessageRecord, ThemeRiverChartWorker } from '../types'; // Make sure th
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// A little magic to add .ts typing 
+const _self = self as unknown as ThemeRiverChartWorker.WorkerSelf
+
+_self.onmessage = (e: MessageEvent<ThemeRiverChartWorker.Message>) => {
+  console.log('Worker: Received messages from main thread.');
+  const { messages, groupmode } = e.data;
+  
+  // Perform the heavy calculation
+  // note: if error happens, the outside will handle it in the onerror() method.
+  const chartOption = generateChartOption(messages, groupmode);
+  
+  _self.postMessage(chartOption);
+};
+
 const generateChartOption = (
   messages: MessageRecord[], 
-  groupmode: 'month' | 'day' = 'month'
+  groupmode: ThemeRiverChartWorker.Message['groupmode'] = 'month'
 ): ThemeRiverChartWorker.Response => {
 
   // --- 1. 数据加载与清洗 ---
@@ -116,15 +130,3 @@ const generateChartOption = (
     end_date
   };
 }
-
-self.onmessage = (e: MessageEvent<ThemeRiverChartWorker.Message>) => {
-  console.log('Worker: Received messages from main thread.');
-  const { messages, groupmode } = e.data;
-  
-  // Perform the heavy calculation
-  // note: if error happens, the outside will handle it in the onerror() method.
-  const chartOption = generateChartOption(messages, groupmode);
-  // Send the result back to the main thread
-  self.postMessage(chartOption);
-  
-};

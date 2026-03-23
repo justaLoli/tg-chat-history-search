@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { SearchBar, Toast } from "antd-mobile";
-import ResultsList from "./ResultsList"; // 导入新的列表组件
-import type { MessageRecord, WorkerResponse, ChatRecord } from "../types";
-
-const STORAGE_KEY = 'chat-history-data';
+import ResultsList from "./ResultsList";
+import type { MessageRecord, ChatRecord, SearchWorker } from "../types";
 
 interface SearchPageProps {
   chatRecord: ChatRecord | null;
@@ -18,26 +16,20 @@ export default function SearchPage({
   const [searchResults, setSearchResults] = useState<MessageRecord[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  const workerRef = useRef<Worker>();
+  const workerRef = useRef<SearchWorker.WorkerInterface>();
   const debounceTimerRef = useRef<number | null>(null);
 
+  //初始化Worker（尚不调用）
   useEffect(() => {
-    workerRef.current = new Worker(new URL('../worker/chat.worker.ts', import.meta.url), { type: 'module' });
-    workerRef.current.onmessage = (event: MessageEvent<WorkerResponse>) => {
-      const { type, payload } = event.data;
-
-      switch (type) {
-        case 'search-results':
-          setSearchResults(payload);
-          setIsSearching(false);
-          break;
-
-        case 'error':
-          setIsSearching(false);
-          localStorage.removeItem(STORAGE_KEY);
-          Toast.show({ icon: 'fail', content: payload });
-          break;
-      }
+    workerRef.current = new Worker(new URL('../worker/chat.worker.ts', import.meta.url), { type: 'module' }) as SearchWorker.WorkerInterface;
+    workerRef.current.onmessage = (event: MessageEvent<SearchWorker.Response>) => {
+      const { searchResults } = event.data;
+      setSearchResults(searchResults);
+      setIsSearching(false);
+    }
+    workerRef.current.onerror = (error) => {
+      setIsSearching(false);
+      Toast.show({ icon: 'fail', content: error.toString() });
     };
     return () => {
       workerRef.current?.terminate();
@@ -54,7 +46,8 @@ export default function SearchPage({
     }
     setIsSearching(true);
     debounceTimerRef.current = window.setTimeout(() => {
-      workerRef.current?.postMessage({ type: 'search', payload: { chatRecord: chatRecord, query: q } });
+      if (!chatRecord) { return; }
+      workerRef.current?.postMessage({ chatRecord, query });
     }, 300);
   };
 
