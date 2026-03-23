@@ -74,8 +74,8 @@ export namespace ThemeRiverChartWorker {
   export type Response = {
     allSenders: Set<string>;
     chartData: [date: string, count: number, sender: string][];
-    start_date: string,
-    end_date: string
+    startDate: string,
+    endDate: string
   };
   export type WorkerInterface = TypedWorker<Message, Response>;
   export type WorkerSelf = TypedWorkerSelf<Message, Response>;

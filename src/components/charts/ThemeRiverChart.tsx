@@ -70,14 +70,16 @@ const generateChartOption = (
   chatData: ThemeRiverChartWorker.Response, 
   groupmode: ThemeRiverChartWorker.Message['groupmode']
 ) => {
-  const { allSenders, chartData, start_date, end_date } = chatData;
-  const subtitleText = `数据区间: ${start_date} 至 ${end_date}`;
+  const { allSenders, chartData, startDate, endDate } = chatData;
+  const subtitleText = `数据区间: ${startDate} 至 ${endDate}`;
   const titleText = (() => {
     switch (groupmode) {
       case ('month'): return "月度聊天动态";
       case ('day'): return "每日聊天动态（4时-次日4时）";
     }
   })();
+  const legendData = Array.from(allSenders);
+  
   return {
     title: {
       text: titleText,
@@ -104,7 +106,7 @@ const generateChartOption = (
     },
     legend: {
       show: true,
-      data: Array.from(allSenders), // 从数据中动态获取图例
+      data: legendData,
       top: "6%",
       orient: "horizontal",
       textStyle: {

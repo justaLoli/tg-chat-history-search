@@ -52,14 +52,14 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
         };
 
         // 从当前的 mainData 状态创建新对象，确保函数闭包能访问到最新的状态
-        const new_data = {
+        const newData = {
           ...mainData,
           [key]: chatRecord
         };
         // 乐观更新：先同步修改 React 状态，这样 UI 能瞬间渲染出新记录，不会卡顿
-        setMainData(new_data);
+        setMainData(newData);
 
-        await localforage.setItem(STORAGE_KEY, new_data);
+        await localforage.setItem(STORAGE_KEY, newData);
       } catch (error) {
         throw error;
       }

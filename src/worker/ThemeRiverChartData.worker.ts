@@ -120,13 +120,13 @@ const generateChartOption = (
   });
 
   const sortedMonths = Object.keys(dataWithOthers).sort();
-  const start_date = dayjs(sortedMonths[0]).format('YYYY年MM月');
-  const end_date = dayjs(sortedMonths[sortedMonths.length - 1]).format('YYYY年MM月');
+  const startDate = dayjs(sortedMonths[0]).format('YYYY年MM月');
+  const endDate = dayjs(sortedMonths[sortedMonths.length - 1]).format('YYYY年MM月');
 
   return {
     allSenders,
     chartData,
-    start_date,
-    end_date
+    startDate,
+    endDate
   };
 }
