@@ -49,3 +49,17 @@ export type WorkerResponse =
 export type WorkerMessage =
   | { type: 'load-from-string'; payload: string }
   | { type: 'search'; payload: { chatRecord: ChatRecord, query: string } };
+
+
+export namespace ThemeRiverChartWorker {
+  export type Message = {
+    messages: MessageRecord[];
+    groupmode: 'month' | 'day';
+  };
+  export type Response = {
+    allSenders: Set<string>;
+    chartData: [date: string, count: number, sender: string][];
+    start_date: string,
+    end_date: string
+  }
+}

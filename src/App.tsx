@@ -12,19 +12,24 @@ import StatisticPage from './components/StatisticPage';
 const BodyContent = () => {
   const { tabKey, mainDataHelper, chatKey } = useGlobal();
 
-  const content = (() => {
-    switch (tabKey) {
-      case "manage":
-        return (<ManagePage />);
-      case "search": 
-        return (<SearchPage 
-          chatRecord={mainDataHelper.getChatHistory(chatKey)}
-        />);
-      case "statistic":
-        return (<StatisticPage />)
-    }
-  })();
-  return (<div className='body'> {content} </div>)
+  return (
+    <div className='body'>
+      {/*Search Page*/}
+      <div style={{ display: tabKey === 'search' ? 'block' : 'none' }} >
+        <SearchPage chatRecord={mainDataHelper.getChatHistory(chatKey)} />
+      </div>
+
+      {/*Statistic Page*/}
+      <div style={{ display: tabKey === 'statistic' ? 'block' : 'none' }}>
+        <StatisticPage />
+      </div>
+
+      {/*Manage Page*/}
+      <div style={{ display: tabKey === 'manage' ? 'block' : 'none' }} > 
+        <ManagePage />
+      </div>
+    </div>
+  )
 }
 const BottomContent = () => {
   const { tabKey, setTabKey } = useGlobal();

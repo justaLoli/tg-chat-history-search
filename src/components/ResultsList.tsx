@@ -3,6 +3,7 @@
 import { List, Space, SpinLoading, Empty, Toast } from 'antd-mobile';
 import type { MessageRecord } from '../types';
 import { useGlobal } from './GlobalProvider';
+import MyEmpty from './MyEmpty';
 
 interface ResultsListProps {
   isImporting: boolean;
@@ -37,22 +38,7 @@ export default function ResultsList({
       );
     }
     if (!isDataLoaded) {
-      return (
-        <Empty
-          description={
-            <span>
-              请先在
-              <span
-                style={{ color: 'var(--adm-color-primary)', cursor: 'pointer' }}
-                onClick={() => switchTab('manage')} // 假设 switchTab 函数在当前作用域可访问
-              >
-                管理页面
-              </span>
-              导入聊天记录文件
-            </span>
-          }
-          style={{ padding: '40px 0' }}
-        />)
+      return (<MyEmpty onClick={() => switchTab('manage')} />)
     }
     if (isSearching) {
       return (
